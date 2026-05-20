@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant C as Client
+    participant G as Gateway (L3, 10s)
+    participant P as ProductService
+    participant R as Redis (L2, 5min)
+    participant DB as PostgreSQL
+
+    C->>G: GET /products
+    G->>G: Hit!
+    G->>C: 200 OK (cached)
+
+    note over P,DB: ProductService, Redis and PostgreSQL are never involved

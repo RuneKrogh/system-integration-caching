@@ -1,0 +1,14 @@
+sequenceDiagram
+    participant C as Client
+    participant P as ProductService
+    participant R as Redis (L2, 5min)
+    participant DB as PostgreSQL
+
+    C->>P: PUT /products/1
+    P->>DB: UPDATE Products SET ...
+    DB->>P: OK
+    P->>P: Remove product:1 and products:all from L1
+    P->>R: Remove product:1 and products:all from Redis
+    P->>P: Store updated product in L1 (30s TTL)
+    P->>R: Store updated product in Redis (5min TTL)
+    P->>C: 200 OK (updated product)

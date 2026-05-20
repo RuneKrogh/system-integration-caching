@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant C as Client
+    participant G as Gateway (L3, 10s)
+    participant P as ProductService
+    participant R as Redis (L2, 5min)
+    participant DB as PostgreSQL
+
+    C->>G: GET /products
+    G->>G: Miss (TTL expired)
+    G->>P: Forward request
+    P->>P: L1 hit!
+    P->>G: 200 OK  X-Cache-Layer: L1-Memory
+    G->>G: Store in output cache (10s TTL)
+    G->>C: 200 OK
+
+    note over R,DB: Redis and PostgreSQL are never involved
