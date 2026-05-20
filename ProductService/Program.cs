@@ -12,6 +12,8 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
 builder.Services.AddMemoryCache();
+builder.Services.AddStackExchangeRedisCache(opt =>
+    opt.Configuration = builder.Configuration["Redis:ConnectionString"]);
 builder.Services.AddScoped<ProductCacheService>();
 
 var app = builder.Build();
