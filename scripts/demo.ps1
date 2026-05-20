@@ -1,4 +1,5 @@
-$GatewayUrl = "http://localhost:8080/products"
+$GatewayUrl        = "http://localhost:8080/products"
+$ProductServiceUrl = "http://localhost:5000/products"
 
 function Request {
     param($Label)
@@ -7,14 +8,6 @@ function Request {
     $sw.Stop()
     $layer = $response.Headers['X-Cache-Layer']
     Write-Host ("  {0,-12} {1,6}ms   Layer: {2}" -f $Label, $sw.ElapsedMilliseconds, $layer)
-}
-
-function Pause {
-    param($Message)
-    Write-Host ""
-    Write-Host $Message -ForegroundColor Yellow
-    Read-Host "  Press Enter to continue"
-    Write-Host ""
 }
 
 function Countdown {
@@ -27,6 +20,20 @@ function Countdown {
     }
     Write-Host "`r  Done.                              "
     Write-Host ""
+}
+
+function WaitForProductService {
+    Write-Host "  Waiting for ProductService to come back up..." -ForegroundColor Yellow
+    $ready = $false
+    while (-not $ready) {
+        try {
+            Invoke-WebRequest -Uri "http://localhost:5000/swagger/index.html" -UseBasicParsing -TimeoutSec 2 | Out-Null
+            $ready = $true
+        } catch {
+            Start-Sleep -Seconds 1
+        }
+    }
+    Write-Host "  ProductService is ready." -ForegroundColor DarkGray
 }
 
 Write-Host ""
@@ -59,7 +66,10 @@ Request "Request 5"
 Request "Request 6"
 
 # ---- Scenario 4: L2 Redis hit ----
-Pause "Restart ProductService to clear L1, then press Enter.`n  Run in another terminal: docker compose restart productservice"
+Write-Host ""
+Write-Host "  Restarting ProductService to clear L1 memory cache..." -ForegroundColor Yellow
+docker compose -f "$PSScriptRoot\..\docker-compose.yml" restart productservice 2>$null
+WaitForProductService
 Countdown 10 "Waiting for gateway TTL (10s) to expire..."
 
 Write-Host "Scenario 4: L2 Redis cache hit (gateway miss, L1 cleared, Redis still warm)" -ForegroundColor Green
@@ -68,7 +78,11 @@ Request "Request 7"
 Request "Request 8"
 
 # ---- Scenario 5: Cache invalidation ----
-Pause "Update a product to trigger cache invalidation.`n  Use Swagger at http://localhost:5000/swagger to PUT /products/1, then press Enter."
+Write-Host ""
+Write-Host "  Updating product 1 to trigger cache invalidation..." -ForegroundColor Yellow
+$body = '{"name":"Laptop Pro 15 (updated)","category":"Electronics","price":1199.99,"stock":40}'
+Invoke-WebRequest -Uri "$ProductServiceUrl/1" -Method PUT -Body $body -ContentType "application/json" -UseBasicParsing | Out-Null
+Write-Host "  Product 1 updated." -ForegroundColor DarkGray
 Countdown 10 "Waiting for gateway TTL (10s) to expire..."
 
 Write-Host "Scenario 5: After cache invalidation (PUT forces a fresh database fetch)" -ForegroundColor Green
