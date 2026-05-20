@@ -30,7 +30,15 @@ app.UseSwaggerUI();
 app.MapGet("/products", async (ProductCacheService cache, HttpContext http) =>
 {
     var (products, source) = await cache.GetAllAsync();
+
+    var etag = $"\"{products.Max(p => p.UpdatedAt.Ticks)}\"";
+    if (http.Request.Headers.IfNoneMatch == etag)
+        return Results.StatusCode(304);
+
+    http.Response.Headers.ETag = etag;
+    http.Response.Headers.CacheControl = "public, max-age=30";
     http.Response.Headers["X-Cache-Layer"] = source;
+
     return Results.Ok(products);
 });
 
@@ -38,7 +46,15 @@ app.MapGet("/products/{id}", async (int id, ProductCacheService cache, HttpConte
 {
     var (product, source) = await cache.GetByIdAsync(id);
     if (product is null) return Results.NotFound();
+
+    var etag = $"\"{product.UpdatedAt.Ticks}\"";
+    if (http.Request.Headers.IfNoneMatch == etag)
+        return Results.StatusCode(304);
+
+    http.Response.Headers.ETag = etag;
+    http.Response.Headers.CacheControl = "public, max-age=30";
     http.Response.Headers["X-Cache-Layer"] = source;
+
     return Results.Ok(product);
 });
 
