@@ -1,0 +1,23 @@
+# Build output
+bin/
+obj/
+out/
+
+# .NET
+*.user
+*.suo
+.vs/
+*.db
+*.db-shm
+*.db-wal
+
+# Rider / VS Code
+.idea/
+.vscode/
+
+# Docker
+.dockerignore
+
+# Environment
+.env
+appsettings.local.json
