@@ -23,7 +23,7 @@ sequenceDiagram
     P->>R: GET products:all
     R->>P: Miss (cold)
     P->>DB: SELECT * FROM Products
-    DB->>P: 10 rows (~45ms)
+    DB->>P: 10 rows
     P->>P: Store in L1 (30s TTL)
     P->>R: Store in Redis (5min TTL)
     P->>G: 200 OK  X-Cache-Layer: Database
@@ -46,7 +46,7 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     C->>G: GET /products
-    G->>G: Hit! (~0.2ms)
+    G->>G: Hit!
     G->>C: 200 OK (cached)
 
     note over P,DB: ProductService, Redis and PostgreSQL are never involved
@@ -69,7 +69,7 @@ sequenceDiagram
     C->>G: GET /products
     G->>G: Miss (TTL expired)
     G->>P: Forward request
-    P->>P: L1 hit! (~0.5ms)
+    P->>P: L1 hit!
     P->>G: 200 OK  X-Cache-Layer: L1-Memory
     G->>G: Store in output cache (10s TTL)
     G->>C: 200 OK
@@ -96,7 +96,7 @@ sequenceDiagram
     G->>P: Forward request
     P->>P: L1 miss (TTL expired)
     P->>R: GET products:all
-    R->>P: Hit! (~3ms)
+    R->>P: Hit!
     P->>P: Repopulate L1 (30s TTL)
     P->>G: 200 OK  X-Cache-Layer: L2-Redis
     G->>G: Store in output cache (10s TTL)
