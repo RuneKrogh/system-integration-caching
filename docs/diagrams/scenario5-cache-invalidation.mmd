@@ -4,6 +4,7 @@ sequenceDiagram
     participant R as Redis (L2, 5min)
     participant DB as PostgreSQL
 
+    Note over C,P: ApiGateway omitted. Benchmark sends PUT directly to ProductService.
     C->>P: PUT /products/1
     P->>DB: UPDATE Products SET ...
     DB->>P: OK
